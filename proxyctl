@@ -294,6 +294,30 @@ _proxyctl_status() {
 
 }
 
+_proxyctl_edit() {
+    local profile_path="$1"
+    if [ ! -f "$profile_path" ]; then
+	echo "$profile_path does NOT exist" >& 2
+	return -1
+    fi
+
+    DEFAULT_EDITOR="${VISUAL:-${EDITOR:-vi}}"
+    
+    "$DEFAULT_EDITOR" "$profile_path"
+}
+
+_proxyctl_view() {
+    local profile_path="$1"
+    if [ ! -f "$profile_path" ]; then
+	echo "$profile_path does not exist" >& 2
+	return -1
+    fi
+    
+    DEFAULT_PAGER="${PAGER:-less}"
+    
+    "$DEFAULT_PAGER" "$profile_path"
+}
+
 proxyctl() {
 	
 	# ZSH ONLY: make it behave like a normal shell
@@ -302,7 +326,7 @@ proxyctl() {
 		emulate ksh
 	fi
 
-	local cmd
+	local cmd="help"
 	local profile_arg="$HOME/.proxyctl_profile"
 	local local_only="false"
 
@@ -310,33 +334,49 @@ proxyctl() {
 	while [ $# -gt 0 ]; do
 		case "$1" in
 			"-l"|"--local")
-				local_only="true"
-				shift
-				;;
-			"set"|"unset"|"status"|"stat")
-				cmd="$1"
-				shift
-				;;
+			    local_only="true"
+			;;
+			"set"|"s")
+			    cmd="set"
+			;;
+			"unset"|"u")
+			    cmd="unset"
+			;;
+			"status"|"stat"|"st")
+			    cmd="status"
+			;;
+			"edit"|"e")
+			    cmd="edit"
+			;;
+			"view"|"v")
+			    cmd="view"
+			;;
 			*)
-				profile_arg="$1"
-				shift
-				;;
-		esac
-	done
+			    profile_arg="$1"
+			;;
 
+		esac
+		shift
+	done
 
 	case "$cmd" in
 	"set")
 		_proxyctl_set "$profile_arg" "$local_only"
-	;;
+		;;
 	"unset")
 		_proxyctl_unset "$local_only"
-	;;
-	"status"|"stat")
+		;;
+	"status")
 		_proxyctl_status "$local_only"
-	;;
+		;;
+	"edit")
+	        _proxyctl_edit "$profile_arg"
+		;;
+	"view")
+	        _proxyctl_view "$profile_arg"
+		;;
 	*)
-		echo -e "Usage:\nproxyctl\n\tset [profile-file] [--local]\n\tunset [--local]\n\tstatus"
+		echo -e "Usage:\nproxyctl\n\tset [profile-file] [--local]\n\tunset [--local]\n\tstatus\n\tview [profile-file]\n\tedit [profile-file]"
 	;;
 	esac
 
